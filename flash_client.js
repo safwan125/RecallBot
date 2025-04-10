@@ -1,7 +1,7 @@
 // flash_client.js
 
-const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
-const GOOGLE_API_KEY = "API-KEY"; // <-- Replace with your actual key
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent";
+const GOOGLE_API_KEY = "AIzaSyBatHzHo6JwC4gJY198p1pIBS1jWU4Ud5A"; // <-- Replace with your actual key
 
 const flashcardKeywords = ["flashcard", "study", "revise", "topic", "generate", "summarize"];
 
@@ -13,9 +13,8 @@ function showLoading(state) {
 }
 
 async function getFlashcardResponse(message) {
-  const isFlashcardQuery = flashcardKeywords.some(keyword =>
-    message.toLowerCase().includes(keyword)
-  );
+  // Always generate flashcards regardless of keywords
+  const isFlashcardQuery = true;
 
   if (!isFlashcardQuery) {
     return "Out of scope.";
@@ -32,7 +31,16 @@ Only output the flashcards. Topic: ${message}
 `;
 
   const body = JSON.stringify({
-    contents: [{ parts: [{ text: prompt }] }]
+    contents: [{ 
+      role: "user",
+      parts: [{ text: prompt }] 
+    }],
+    generationConfig: {
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 1024,
+    }
   });
 
   try {
@@ -45,36 +53,36 @@ Only output the flashcards. Topic: ${message}
       body
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API Error:", errorData);
+      return `Error: ${errorData.error?.message || `Status code: ${response.status}`}`;
+    }
+
     const data = await response.json();
     showLoading(false);
     window.lastGeminiResponse = data; // ✅ This makes the response accessible from browser console
     console.log("🔥 Gemini Full Response:", data); // ✅ For visual check in the console
 
-    if (
-      data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      data.candidates[0].content.parts &&
-      data.candidates[0].content.parts[0]
-    ) {
-      const part = data.candidates[0].content.parts[0];
-
-      if (typeof part === "string") {
-        return part;
-      }
-
-      if (part.text) {
-        return part.text;
-      }
-
-      // Fallback: show raw part object for debugging
-      return JSON.stringify(part);
-    } else {
-      return "Sorry, I couldn't generate flashcards.";
+    // Handle error responses from the API
+    if (data.error) {
+      console.error("API Error:", data.error);
+      return `Error: ${data.error.message || "Unknown error occurred"}`;
     }
+
+    // Extract text from the API response
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const content = data.candidates[0].content;
+      if (content.parts && content.parts.length > 0 && content.parts[0].text) {
+        return content.parts[0].text;
+      }
+    }
+    
+    // If we couldn't extract the text through the expected path
+    return "Sorry, I couldn't generate flashcards. The API response format was unexpected.";
   } catch (error) {
     console.error("API Error:", error);
     showLoading(false);
-    return "Error connecting to the AI service.";
+    return "Error connecting to the AI service. Please check your internet connection and try again.";
   }
 }

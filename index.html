@@ -5,19 +5,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Flashcard Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>📚 AI Flashcard Chatbot</h1>
+    <h1>📚 FlashCard AI</h1>
     
-    <div id="chat-box" class="chat-box"></div>
+    <div id="chat-box" class="chat-box">
+      <div class="msg bot">
+        Welcome to FlashCard AI! 👋 Enter any topic to generate 5 study flashcards. For example: "Generate flashcards about photosynthesis" or "Create study cards for World War II".
+      </div>
+    </div>
 
-    <div id="loading" class="loading" style="display: none;">Generating flashcards...</div>
+    <div id="loading" class="loading" style="display: none;">Generating flashcards</div>
 
     <div class="input-area">
       <input type="text" id="user-input" placeholder="Enter a topic to generate flashcards..." />
-      <button id="send-btn">Send</button>
+      <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
 
@@ -30,7 +36,7 @@
     function appendMessage(sender, message) {
       const msg = document.createElement("div");
       msg.className = sender === "user" ? "msg user" : "msg bot";
-      msg.innerText = message;
+      msg.textContent = message;
       chatBox.appendChild(msg);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -41,14 +47,22 @@
 
       appendMessage("user", message);
       input.value = "";
-
+      
+      document.getElementById("loading").style.display = "block";
       const response = await getFlashcardResponse(message);
+      document.getElementById("loading").style.display = "none";
+      
       appendMessage("bot", response);
     });
 
     input.addEventListener("keypress", function (e) {
       if (e.key === "Enter") sendBtn.click();
     });
+    
+    // Focus input on page load
+    window.onload = function() {
+      document.getElementById("user-input").focus();
+    };
   </script>
 </body>
 </html>
